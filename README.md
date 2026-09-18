@@ -40,16 +40,23 @@ transformação e a entrega correm na fila, exatamente como no poll.
 npm install
 docker compose up -d postgres redis
 cp .env.example .env            # preencha os segredos referenciados pelos YAML
-export DATABASE_URL=postgres://gateway:gateway@localhost:5432/gateway
 npm run migrate
 npm run start:dev
 ```
+
+`npm run start`, `start:dev`, `start:prod` e os `migrate` leem o `.env` da raiz sozinhos (via
+`--env-file` do Node); não é preciso exportar nada na mão. Só `start` e `start:dev` exigem que o
+arquivo exista — os demais seguem sem ele, porque em produção as variáveis vêm do orquestrador.
 
 Ou tudo em container, incluindo o collector de traces:
 
 ```bash
 docker compose up --build
 ```
+
+O serviço `gateway` do compose lê o **mesmo** `.env` (`env_file`, opcional), então os segredos
+valem para os dois caminhos. Endereço de banco, Redis, OTLP e `PIPELINES_DIR` são sobrescritos no
+`environment:` do serviço, porque dentro da rede do compose eles são outros.
 
 Verificando:
 

@@ -40,7 +40,23 @@ services:
   gateway:
     build: .
     ports: ['3000:3000']
+    # Os segredos entram pelo MESMO .env que o fluxo local usa, em vez de uma
+    # lista inline -- que envelhece a cada fluxo novo, como esta envelheceu:
+    # citava GTS_* e TSM_BEARER muito depois de os fluxos ativos passarem a
+    # pedir ADM_*, FTO_* e PARCEIRO_X_API_KEY. Com o arquivo, acrescentar um
+    # terminal continua sendo so YAML mais variavel de ambiente.
+    #
+    # Opcional de proposito: sem .env o container sobe assim mesmo e quem
+    # recusa e o boot, nomeando arquivo, campo e segredo que falta. Em
+    # producao nao existe .env -- as variaveis vem do orquestrador (secret do
+    # Kubernetes, task definition do ECS).
+    env_file:
+      - path: .env
+        required: false
     environment:
+      # `environment` vence o `env_file` pela especificacao do compose, e e
+      # disso que estas linhas vivem: dentro da rede do compose os enderecos
+      # sao outros, e os pipelines vem do volume montado, nao de ./pipelines.
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgres://gateway:gateway@postgres:5432/gateway
@@ -49,13 +65,6 @@ services:
       PIPELINES_DIR: /etc/gateway/pipelines
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: app-api-gateway
-      # Segredos referenciados pelos YAML de exemplo. Em producao vem do
-      # orquestrador (secret do Kubernetes, task definition do ECS), NUNCA daqui.
-      GTS_SAO_LUIS_USERNAME: usuario-de-exemplo
-      GTS_SAO_LUIS_PASSWORD: senha-de-exemplo
-      TSM_BEARER: token-de-exemplo
-      PARCEIRO_X_API_KEY: chave-de-exemplo
-      DESTINO_INTERNO_BEARER: token-de-exemplo
     volumes:
       # AQUI esta a demonstracao do modelo: a mesma imagem serve qualquer
       # deployment; o que muda e o diretorio montado.
