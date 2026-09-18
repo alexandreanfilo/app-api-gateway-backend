@@ -1,0 +1,173 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["src/**", "test/**", "scripts/**", "*.json", "*.cjs", "*.js"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": ["error"]
+          }
+        },
+        "noExplicitAny": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "noParameterAssign": "error",
+        "useConst": "error",
+        "useImportType": "off"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/core/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": "**/persistence/**",
+                    "message": "core/ nao importa de outras camadas. Declare uma porta em core/ports e injete."
+                  },
+                  {
+                    "group": "**/config/**",
+                    "message": "core/ nao importa de outras camadas. Declare uma porta em core/ports e injete."
+                  },
+                  {
+                    "group": "**/http/**",
+                    "message": "core/ nao importa de outras camadas. Declare uma porta em core/ports e injete."
+                  },
+                  {
+                    "group": "**/queue/**",
+                    "message": "core/ nao importa de outras camadas. Declare uma porta em core/ports e injete."
+                  },
+                  {
+                    "group": "**/observability/**",
+                    "message": "core/ nao importa de outras camadas. Declare uma porta em core/ports e injete."
+                  },
+                  {
+                    "group": "@nestjs/*",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "@nestjs/**",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "kysely",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "bullmq",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "zod",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "consola",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "express",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "pg",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "yaml",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  },
+                  {
+                    "group": "ioredis",
+                    "message": "core/ e framework-agnostico: somente builtins do node e @opentelemetry/api."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/main.ts",
+        "src/instrumentation.ts",
+        "scripts/**",
+        "test/**",
+        "**/*.spec.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/persistence/migrations/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/app.module.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noStaticOnlyClass": "off"
+          }
+        }
+      }
+    }
+  ]
+}

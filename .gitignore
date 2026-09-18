@@ -1,0 +1,47 @@
+# --- dependencias e build -------------------------------------------------
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# --- testes ---------------------------------------------------------------
+coverage/
+.jest-cache/
+
+# --- segredos -------------------------------------------------------------
+# Apenas .env.example e versionado; valores reais nunca entram no repo.
+.env
+.env.*
+!.env.example
+
+# Material de TLS usado localmente. O diretorio permanece no repo via .gitkeep.
+certs/*
+!certs/.gitkeep
+
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# --- logs e temporarios ---------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pids/
+*.pid
+tmp/
+.temp/
+
+# --- ferramentas locais ---------------------------------------------------
+.claude/settings.local.json
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# --- sistema operacional --------------------------------------------------
+.DS_Store
+Thumbs.db

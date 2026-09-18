@@ -1,0 +1,17 @@
+id: primeiro
+name: Primeiro a declarar a rota
+client: parceiro
+source:
+  kind: http-endpoint
+  path: /in/eventos
+  auth:
+    kind: static-token
+    value: { secret: TOKEN_A }
+dedupe:
+  fields: [id]
+  onMissing: reject
+transform:
+  id: { from: id }
+destinations:
+  - id: destino
+    url: https://destino.exemplo.com/eventos

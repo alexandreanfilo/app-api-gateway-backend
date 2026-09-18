@@ -1,0 +1,18 @@
+# Cliente cujo contrato terminou: o token saiu do ambiente e o fluxo foi parado
+# desligando o arquivo. Isso NAO pode derrubar o gateway dos outros clientes.
+id: contrato-encerrado
+name: Fluxo parado, com segredo que nao existe mais
+client: ex-cliente
+enabled: false
+source:
+  kind: http-endpoint
+  # Colide de proposito com a rota da recepcao-eventos: desabilitado nao registra rota.
+  path: /in/recepcao-eventos
+  auth: { kind: static-token, header: X-Api-Key, value: { secret: TOKEN_JA_REVOGADO } }
+  itemsPath: eventos
+dedupe: { fields: [id], onMissing: reject }
+transform: { id: { from: id } }
+destinations:
+  - id: destino
+    url: https://destino.exemplo.com/eventos
+    auth: { kind: bearer, token: { secret: OUTRO_TOKEN_REVOGADO } }

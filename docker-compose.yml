@@ -1,0 +1,78 @@
+# Sobe um deployment completo: Postgres, Redis, collector OTLP e o gateway, com
+# os pipelines entrando por VOLUME -- que e exatamente como a producao funciona.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway
+      POSTGRES_DB: gateway
+    ports: ['5432:5432']
+    volumes: ['postgres_data:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U gateway -d gateway']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    # noeviction NAO e detalhe: com qualquer politica de despejo, o BullMQ perde
+    # jobs em SILENCIO quando o Redis enche. O gateway recusa subir sem isto.
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    ports: ['6379:6379']
+    volumes: ['redis_data:/data']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: .
+    command: ['node', 'dist/scripts/migrate.js', 'up']
+    environment:
+      DATABASE_URL: postgres://gateway:gateway@postgres:5432/gateway
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: 'no'
+
+  gateway:
+    build: .
+    ports: ['3000:3000']
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://gateway:gateway@postgres:5432/gateway
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PIPELINES_DIR: /etc/gateway/pipelines
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: app-api-gateway
+      # Segredos referenciados pelos YAML de exemplo. Em producao vem do
+      # orquestrador (secret do Kubernetes, task definition do ECS), NUNCA daqui.
+      GTS_SAO_LUIS_USERNAME: usuario-de-exemplo
+      GTS_SAO_LUIS_PASSWORD: senha-de-exemplo
+      TSM_BEARER: token-de-exemplo
+      PARCEIRO_X_API_KEY: chave-de-exemplo
+      DESTINO_INTERNO_BEARER: token-de-exemplo
+    volumes:
+      # AQUI esta a demonstracao do modelo: a mesma imagem serve qualquer
+      # deployment; o que muda e o diretorio montado.
+      - ./pipelines:/etc/gateway/pipelines:ro
+      - ./certs:/etc/gateway/certs:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ['--config=/etc/otel/config.yaml']
+    volumes: ['./docker/otel-collector.yaml:/etc/otel/config.yaml:ro']
+    ports: ['4318:4318']
+
+volumes:
+  postgres_data:
+  redis_data:

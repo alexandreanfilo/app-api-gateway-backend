@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    // CommonJS não é preferência, é requisito: ver o comentário no topo de
+    // src/instrumentation.ts. Em ESM os imports são içados e o OpenTelemetry
+    // silenciosamente não instrumenta nada.
+    "module": "commonjs",
+    "target": "es2023",
+    "lib": ["es2023"],
+    "declaration": false,
+    "removeComments": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*", "test/**/*", "scripts/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

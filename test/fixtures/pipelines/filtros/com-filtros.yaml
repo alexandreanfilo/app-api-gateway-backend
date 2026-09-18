@@ -1,0 +1,27 @@
+id: com-filtros
+name: Exercita as duas formas de filtro e o roteamento por destino
+client: verificacao
+source:
+  kind: http-endpoint
+  path: /in/com-filtros
+  auth:
+    kind: static-token
+    header: X-Api-Key
+    value: { secret: FILTROS_TOKEN }
+  itemsPath: itens
+dedupe:
+  fields: [pedido_id]
+  onMissing: reject
+filter:
+  situacao: [NOVO, EM_TRANSITO]
+  pedido_id: { numeric: true, notEquals: 0 }
+transform:
+  documento_id: { from: pedido_id, cast: number }
+  evento.tipo: { from: situacao }
+destinations:
+  - id: principal
+    url: https://principal.exemplo.com/eventos
+  - id: espelho
+    url: https://espelho.exemplo.com/eventos
+    filter:
+      pedido_id: [41655302]

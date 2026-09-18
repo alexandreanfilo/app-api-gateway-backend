@@ -1,0 +1,24 @@
+id: parceiro-com-campo-de-poll
+name: Endpoint declarando campos de poll
+client: parceiro
+source:
+  kind: http-endpoint
+  path: /in/parceiro
+  auth:
+    kind: static-token
+    header: X-Api-Key
+    value: { secret: PARCEIRO_TOKEN }
+  # Campos que so existem em http-poll. O strictObject da uniao discriminada
+  # rejeita os dois.
+  schedule: "*/5 * * * *"
+  pagination:
+    param: page
+    maxPages: 3
+dedupe:
+  fields: [id]
+  onMissing: reject
+transform:
+  id: { from: id }
+destinations:
+  - id: destino
+    url: https://destino.exemplo.com/eventos

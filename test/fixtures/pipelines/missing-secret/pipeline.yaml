@@ -1,0 +1,17 @@
+id: sem-segredo
+name: Referencia um segredo que nao existe no ambiente
+client: parceiro
+source:
+  kind: http-endpoint
+  path: /in/sem-segredo
+  auth:
+    kind: static-token
+    value: { secret: NAO_EXISTE_NO_AMBIENTE }
+dedupe:
+  fields: [id]
+  onMissing: reject
+transform:
+  id: { from: id }
+destinations:
+  - id: destino
+    url: https://destino.exemplo.com/eventos

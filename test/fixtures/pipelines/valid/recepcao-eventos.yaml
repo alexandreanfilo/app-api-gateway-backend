@@ -1,0 +1,42 @@
+# FIXTURE DE TESTE -- nao corresponde a nenhum parceiro real.
+#
+# Exercita o motor pela entrada de endpoint. Tudo a jusante -- filtro, split,
+# dedupe, transform, entrega -- e o mesmo codigo do pipeline de poll acima; so a
+# entrada muda, e e exatamente isso que os testes precisam provar.
+id: recepcao-eventos
+name: Recepcao de eventos -> destino B
+client: cliente-exemplo
+enabled: true
+
+source:
+  kind: http-endpoint
+  # Sufixo. O codigo prefixa com /in/, de modo que nenhum pipeline consiga
+  # registrar rota que colida com /healthz, /readyz ou /metrics.
+  path: /in/recepcao-eventos
+  auth:
+    kind: static-token
+    header: X-Api-Key
+    value: { secret: RECEPCAO_API_KEY }
+  itemsPath: eventos
+  maxBodyBytes: 1048576
+  rateLimit:
+    perMinute: 600
+
+dedupe:
+  # Alternativas em cadeia: a primeira que resolver vence. Se as duas faltarem,
+  # vale onMissing.
+  header: Idempotency-Key
+  fields: [id_externo]
+  onMissing: reject
+
+transform:
+  evento_id: { from: id_externo }
+  ocorrido_em: { from: timestamp }
+
+destinations:
+  - id: destino-b
+    method: POST
+    url: https://destino.exemplo.test/recebidos
+    auth:
+      kind: bearer
+      token: { secret: DESTINO_B_TOKEN }

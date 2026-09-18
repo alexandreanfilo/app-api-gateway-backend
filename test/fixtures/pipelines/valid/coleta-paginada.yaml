@@ -1,0 +1,63 @@
+# FIXTURE DE TESTE -- nao corresponde a nenhum cliente, origem ou destino real.
+#
+# Existe para exercitar o MOTOR pela entrada de poll: paginacao, placeholders de
+# data, auth por login-token, split por itemsPath, filtro, chave de deduplicacao
+# composta e transform com cast e aninhamento.
+#
+# Os testes nao devem depender de um fluxo de producao: um YAML real muda por
+# motivo de negocio (um status novo, outra janela de datas) e derrubaria testes
+# de motor que nao tem nada a ver com aquela mudanca.
+id: coleta-paginada
+name: Origem paginada -> destino A
+client: cliente-exemplo
+enabled: true
+
+source:
+  kind: http-poll
+  schedule: "*/5 * * * *"
+  timezone: America/Sao_Paulo
+  method: GET
+  url: https://origem.exemplo.test/api/lista
+  query:
+    de: "{today-2d}"
+    ate: "{today+2d}"
+  pagination:
+    param: page
+    start: 1
+    maxPages: 10
+  auth:
+    kind: login-token
+    loginUrl: https://origem.exemplo.test/api/login
+    body:
+      usuario: { secret: ORIGEM_USUARIO }
+      senha: { secret: ORIGEM_SENHA }
+    tokenPath: JWT
+    header: X-Authorization
+    ttlSeconds: 3000
+  itemsPath: itens
+  totalCountPath: totalRegistros
+
+filter:
+  situacao: [NOVO, LIBERADO, EM_TRANSITO, ENTREGUE]
+
+dedupe:
+  # Chave COMPOSTA: os dois campos sao obrigatorios.
+  fields: [pedido_id, situacao]
+
+transform:
+  documento_id: { from: pedido_id, cast: number }
+  data: { from: atualizado_em }
+  # Notacao de ponto aninha no payload de saida sem sintaxe extra.
+  evento.tipo: { from: situacao }
+
+destinations:
+  - id: destino-a
+    method: POST
+    url: https://destino.exemplo.test/eventos
+    auth:
+      kind: bearer
+      token: { secret: DESTINO_A_TOKEN }
+    retry:
+      attempts: 5
+      backoff: exponential
+      initialDelayMs: 15000

@@ -1,0 +1,24 @@
+# FIXTURE DE TESTE: senha em texto puro num campo de credencial.
+# O boot precisa recusar isto apontando arquivo e caminho do campo.
+id: origem-com-senha
+name: Origem com senha em texto puro
+client: cliente-exemplo
+source:
+  kind: http-poll
+  schedule: "*/5 * * * *"
+  url: https://origem.exemplo.test/api/lista
+  auth:
+    kind: login-token
+    loginUrl: https://origem.exemplo.test/api/login
+    body:
+      usuario: { secret: ORIGEM_USUARIO }
+      senha: "senha-em-texto-puro"
+    tokenPath: JWT
+    header: X-Authorization
+dedupe:
+  fields: [pedido_id]
+transform:
+  id: { from: pedido_id }
+destinations:
+  - id: destino-a
+    url: https://destino.exemplo.test/eventos
