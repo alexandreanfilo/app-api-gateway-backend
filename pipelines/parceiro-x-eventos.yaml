@@ -1,10 +1,15 @@
-# Entrada por ENDPOINT (Event-Driven Consumer).
-# Tudo a jusante -- filtro, split, dedupe, transform, entrega -- e identico ao
-# pipeline de poll. So a entrada muda.
+# DESLIGADO. Nao ha parceiro nem destino interno provisionados ainda: a url de
+# destino (destino.interno) e um placeholder que nao resolve, e a chave de
+# entrada seria inventada por nos, nao recebida de ninguem.
+#
+# Fica como o exemplo vivo da entrada por ENDPOINT (Event-Driven Consumer):
+# tudo a jusante -- filtro, split, dedupe, transform, entrega -- e identico ao
+# pipeline de poll, so a entrada muda. Para ligar: `enabled: true`, url real do
+# destino e os dois segredos no ambiente.
 id: parceiro-x-eventos
-name: Parceiro X -> destino interno
+name: Parceiro X -> destino interno (exemplo de entrada por endpoint)
 client: parceiro-x
-enabled: true
+enabled: false
 
 source:
   kind: http-endpoint

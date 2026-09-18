@@ -62,9 +62,15 @@ Verificando:
 
 ```bash
 curl localhost:3000/healthz
-# {"status":"ok","pipelines":4,"endpoints":["/in/parceiro-x-eventos"],
+# {"status":"ok","pipelines":3,"endpoints":[],
 #  "polls":["adm-porto-franco-grao-tsm","fto-barcarena-fertilizante-tsm","fto-sao-luis-fertilizante-tsm"]}
+```
 
+Hoje só há fluxos de poll: `parceiro-x-eventos.yaml`, o exemplo de entrada por endpoint, está
+`enabled: false` até existir parceiro e destino de verdade. Com ele (ou outro `http-endpoint`)
+ligado, `endpoints` passa a listar a rota e a entrada é assim:
+
+```bash
 curl -X POST localhost:3000/in/parceiro-x-eventos \
   -H 'Content-Type: application/json' -H 'X-Api-Key: <PARCEIRO_X_API_KEY>' \
   -d '{"eventos":[{"id_externo":"E-1","timestamp":"2026-09-17T08:00:00Z"}]}'
