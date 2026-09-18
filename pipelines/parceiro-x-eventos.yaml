@@ -1,0 +1,42 @@
+# Entrada por ENDPOINT (Event-Driven Consumer).
+# Tudo a jusante -- filtro, split, dedupe, transform, entrega -- e identico ao
+# pipeline de poll. So a entrada muda.
+id: parceiro-x-eventos
+name: Parceiro X -> destino interno
+client: parceiro-x
+enabled: true
+
+source:
+  kind: http-endpoint
+  # Sufixo. O codigo prefixa com /in/, de modo que nenhum pipeline consiga
+  # registrar rota que colida com /healthz, /readyz ou /metrics.
+  path: /in/parceiro-x-eventos
+  # Valida QUEM CHAMA. Conjunto de tipos distinto do auth de saida.
+  auth:
+    kind: static-token
+    header: X-Api-Key
+    value: { secret: PARCEIRO_X_API_KEY }
+  # Opcional: sem ele, o corpo inteiro e um item.
+  itemsPath: eventos
+  maxBodyBytes: 1048576
+  rateLimit:
+    perMinute: 600
+
+dedupe:
+  # No inbound a chave pode vir do header OU do payload: alternativas em cadeia,
+  # a primeira que resolver vence. Se as duas faltarem, vale onMissing.
+  header: Idempotency-Key
+  fields: [id_externo]
+  onMissing: reject
+
+transform:
+  evento_id: { from: id_externo }
+  ocorrido_em: { from: timestamp }
+
+destinations:
+  - id: interno
+    method: POST
+    url: https://destino.interno/eventos
+    auth:
+      kind: bearer
+      token: { secret: DESTINO_INTERNO_BEARER }
