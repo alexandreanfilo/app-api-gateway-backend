@@ -1,0 +1,69 @@
+# ADM / Porto Franco (grao) -> TSM Integrator.
+#
+# Substitui o `response_mapping` do gateway antigo, que era PHP avaliado com
+# eval() e acumulava cinco responsabilidades num hook de resposta: paginar,
+# validar, filtrar, transformar e rotear. Aqui cada uma tem seu campo.
+id: adm-porto-franco-grao-tsm
+name: ADM Porto Franco (grao) -> TSM Integrator
+client: adm
+enabled: true
+
+source:
+  kind: http-poll
+  schedule: "*/5 * * * *"
+  timezone: America/Sao_Paulo
+  method: GET
+  url: https://portofranco.lyin-s.com/api/list/agendamento_grao/
+  query:
+    # O legado enviava apenas a data inicial (carbon.format('Y-m-d')).
+    data_inicial_agendamento: "{today}"
+  pagination:
+    param: page
+    start: 1
+    # O legado calculava ceil(totalRecordCount / 20) com o tamanho de pagina
+    # HARDCODED. Aqui a parada vem de totalCountPath contando itens de verdade,
+    # entao mudar o tamanho de pagina do parceiro nao quebra nada. maxPages e so
+    # o teto duro contra uma API que sempre devolve a mesma pagina.
+    maxPages: 50
+  auth:
+    # Token estatico no header, como no curl homologado.
+    kind: api-key
+    header: X-Authorization
+    value: { secret: ADM_PORTO_FRANCO_TOKEN }
+  itemsPath: agendamento_grao
+  totalCountPath: totalRecordCount
+
+filter:
+  # in_array($status, ['NP', 'TP'])
+  status: [NP, TP]
+  # $numeroPedido != 0 && is_numeric($numeroPedido)
+  numero_pedido: { numeric: true, notEquals: 0 }
+
+dedupe:
+  fields: [numero_pedido, status]
+
+transform:
+  agendamento_id: { from: numero_pedido, cast: number }
+  data: { from: data_status }
+  evento.id: { from: status }
+
+destinations:
+  - id: tsm
+    method: POST
+    url: https://api.trizy.com.br/tsm-integrator/events
+    auth:
+      kind: bearer
+      token: { secret: ADM_TSM_TOKEN }
+    retry:
+      attempts: 5
+      backoff: exponential
+      initialDelayMs: 15000
+
+  # O gateway antigo espelhava o pedido 41655302 para o webhook.site, em pleno
+  # `eval()`. O recurso e legitimo (Content-Based Router); o espelho especifico
+  # era depuracao esquecida em producao. Fica desligado, como exemplo da forma:
+  #
+  # - id: webhook-log
+  #   url: https://webhook.site/<id>
+  #   filter:
+  #     numero_pedido: [41655302]
