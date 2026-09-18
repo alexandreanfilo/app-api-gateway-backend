@@ -1,0 +1,58 @@
+# FTO Sao Luis (fertilizante) -> TSM Integrator.
+#
+# Estruturalmente identico aos outros dois fluxos GTS -> TSM. O que muda sao
+# seis linhas: id, name, client, url e os dois segredos. E exatamente esse o
+# ganho de ter o pipeline como dado: mais um terminal nao e mais uma linha de
+# codigo.
+id: fto-sao-luis-fertilizante-tsm
+name: FTO Sao Luis (fertilizante) -> TSM Integrator
+client: fto
+enabled: true
+
+source:
+  kind: http-poll
+  schedule: "*/5 * * * *"
+  timezone: America/Sao_Paulo
+  method: GET
+  url: https://portofranco.lyin-s.com/api/list/agendamento_fertilizante
+  query:
+    # So a data de hoje, sem data final: e o que o mapping PHP fazia com
+    # `carbon.format('Y-m-d')`. A janela de 5 dias do exemplo do briefing nao
+    # corresponde a nenhum fluxo real.
+    data_inicial_agendamento: "{today}"
+  pagination:
+    param: page
+    start: 1
+    maxPages: 50
+  auth:
+    kind: api-key
+    header: X-Authorization
+    value: { secret: FTO_SAO_LUIS_TOKEN }
+  itemsPath: agendamento_fertilizante
+  totalCountPath: totalRecordCount
+
+filter:
+  status: [NP, LF, TP, CH]
+  numero_pedido: { numeric: true, notEquals: 0 }
+
+dedupe:
+  fields: [numero_pedido, status]
+
+transform:
+  agendamento_id: { from: numero_pedido, cast: number }
+  data: { from: data_status }
+  evento.id: { from: status }
+
+destinations:
+  - id: tsm
+    method: POST
+    url: https://api.trizy.com.br/tsm-integrator/events
+    auth:
+      # Authorization: Bearer <token>. O gateway antigo usava withToken() do
+      # Laravel para o TSM, que produz exatamente esse formato.
+      kind: bearer
+      token: { secret: FTO_SAO_LUIS_TSM_TOKEN }
+    retry:
+      attempts: 5
+      backoff: exponential
+      initialDelayMs: 15000
