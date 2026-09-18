@@ -1,0 +1,66 @@
+# DESLIGADO. Exemplo ilustrativo que veio do briefing inicial.
+#
+# Esta URL e este itemsPath sao, na operacao real, o fluxo FTO Barcarena --
+# ver fto-barcarena-fertilizante-tsm.yaml. Com os dois habilitados, os dois
+# consultariam a MESMA origem a cada 5 minutos e entregariam cada evento DUAS
+# vezes no TSM (ids de entrega distintos, entao o Idempotency-Key nao salva).
+#
+# Mantido desligado como referencia da forma `login-token`, que nenhum dos
+# fluxos reais usa hoje. Pode ser apagado quando nao servir mais de exemplo.
+id: gts-sao-luis-tsm
+name: GTS Sao Luis -> TSM Integrator (exemplo do briefing)
+client: gbm-logistica
+enabled: false
+
+source:
+  kind: http-poll
+  schedule: "*/5 * * * *"
+  # Opcional; default America/Sao_Paulo. Define em que fuso {today} e resolvido.
+  timezone: America/Sao_Paulo
+  method: GET
+  url: https://agendamento.lyin-s.com/api/list/agendamento_fertilizante
+  query:
+    # Resolvidos na execucao, no fuso acima, no formato YYYY-MM-DD.
+    data_inicial_agendamento: "{today-2d}"
+    data_final_agendamento: "{today+2d}"
+  pagination:
+    param: page
+    start: 1
+    maxPages: 10
+  auth:
+    kind: login-token
+    loginUrl: https://agendamento.lyin-s.com/api/login
+    body:
+      # Nunca valor literal: o Zod rejeita string crua em campo de credencial.
+      username: { secret: GTS_SAO_LUIS_USERNAME }
+      password: { secret: GTS_SAO_LUIS_PASSWORD }
+    tokenPath: JWT
+    header: X-Authorization
+    ttlSeconds: 3000
+  itemsPath: agendamento_fertilizante
+  totalCountPath: totalRecordCount
+
+filter:
+  status: [NP, LF, TP, CH]
+
+dedupe:
+  # No poll a chave e COMPOSTA: os dois campos sao obrigatorios.
+  fields: [numero_pedido, status]
+
+transform:
+  agendamento_id: { from: numero_pedido, cast: number }
+  data: { from: data_status }
+  # Notacao de ponto aninha no payload de saida sem sintaxe extra.
+  evento.id: { from: status }
+
+destinations:
+  - id: tsm
+    method: POST
+    url: https://api.trizy.com.br/tsm-integrator/events
+    auth:
+      kind: bearer
+      token: { secret: TSM_BEARER }
+    retry:
+      attempts: 5
+      backoff: exponential
+      initialDelayMs: 15000
