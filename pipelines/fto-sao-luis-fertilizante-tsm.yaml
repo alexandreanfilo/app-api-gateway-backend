@@ -16,10 +16,11 @@ source:
   method: GET
   url: https://portofranco.lyin-s.com/api/list/agendamento_fertilizante
   query:
-    # So a data de hoje, sem data final: e o que o mapping PHP fazia com
-    # `carbon.format('Y-m-d')`. A janela de 5 dias do exemplo do briefing nao
-    # corresponde a nenhum fluxo real.
-    data_inicial_agendamento: "{today}"
+    # Sem data final, como no legado -- que enviava so a data inicial, vinda de
+    # `carbon.format('Y-m-d')`, ou seja, o dia corrente. Aqui a janela recua
+    # dois dias: agendamento criado ou corrigido retroativamente entrava tarde
+    # demais com {today}, e a deduplicacao absorve o reenvio do que ja passou.
+    data_inicial_agendamento: "{today-2d}"
   pagination:
     param: page
     start: 1

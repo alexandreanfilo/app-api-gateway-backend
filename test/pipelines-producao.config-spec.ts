@@ -134,11 +134,17 @@ describe('pipelines de producao', () => {
       expect(pipeline.source.totalCountPath).toBe('totalRecordCount');
     });
 
-    it('consulta APENAS a data de hoje, como `carbon.format(Y-m-d)` fazia', () => {
+    it('consulta so a data inicial, com dois dias de recuo', () => {
       const pipeline = poll(esperado.id);
-      // A janela de 5 dias do exemplo do briefing nao corresponde a nenhum
-      // fluxo real: os mappings enviavam so a data inicial, igual a hoje.
-      expect(pipeline.source.query).toEqual({ data_inicial_agendamento: '{today}' });
+      // Forma do legado preservada: UMA data, sem data final -- a janela de 5
+      // dias do exemplo do briefing nao corresponde a nenhum fluxo real.
+      //
+      // O offset, esse mudou de proposito. `carbon.format('Y-m-d')` mandava o
+      // dia corrente, e agendamento criado ou corrigido retroativamente nunca
+      // era visto: a consulta seguinte ja perguntava por outro dia. Com
+      // {today-2d} o reenvio do que ja passou e absorvido pela deduplicacao,
+      // que e barata; a janela curta demais custava evento perdido, que nao e.
+      expect(pipeline.source.query).toEqual({ data_inicial_agendamento: '{today-2d}' });
       expect(pipeline.source.timezone).toBe('America/Sao_Paulo');
     });
 
