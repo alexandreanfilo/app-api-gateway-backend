@@ -12,6 +12,7 @@
     "start": "nest start --env-file .env",
     "start:dev": "nest start --watch --env-file .env",
     "start:prod": "node --env-file-if-exists=.env dist/src/main",
+    "fluxo": "tsx --env-file-if-exists=.env scripts/executar-fluxo.ts",
     "migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts up",
     "migrate:down": "tsx --env-file-if-exists=.env scripts/migrate.ts down",
     "migrate:prod": "node --env-file-if-exists=.env dist/scripts/migrate.js up",
